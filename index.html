@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a4d8c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ascend</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230a4d8c'/%3E%3Cpath d='M30 60 L50 30 L70 60 Z' fill='white'/%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow-x:hidden;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;color:#0a2540;background:#eaf2fb;overscroll-behavior:none}
+body{background:linear-gradient(135deg,#dceaf7 0%,#f5f9fd 40%,#e3eef9 100%);min-height:100vh;position:relative}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 15% 20%,rgba(120,180,255,.35),transparent 45%),radial-gradient(circle at 85% 80%,rgba(80,140,220,.25),transparent 50%),radial-gradient(circle at 50% 50%,rgba(200,225,250,.2),transparent 60%);pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:20px 16px 100px;min-height:100vh}
+.glass{background:rgba(255,255,255,.55);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.7);border-radius:24px;box-shadow:0 8px 32px rgba(10,77,140,.08),inset 0 1px 0 rgba(255,255,255,.6)}
+.glass-strong{background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);border:1px solid rgba(255,255,255,.8);border-radius:24px;box-shadow:0 12px 40px rgba(10,77,140,.12),inset 0 1px 0 rgba(255,255,255,.7)}
+.screen{display:none;animation:fade .4s ease}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.lock-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.lock-card{padding:40px 28px;width:100%;max-width:360px;text-align:center}
+.logo{width:72px;height:72px;margin:0 auto 20px;border-radius:22px;background:linear-gradient(135deg,#1e6fc4,#0a4d8c);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(10,77,140,.3)}
+.logo svg{width:38px;height:38px;fill:white}
+.lock-card h1{font-size:26px;font-weight:700;color:#0a2540;margin-bottom:6px;letter-spacing:-.5px}
+.lock-card p{font-size:14px;color:#5a7a9c;margin-bottom:28px}
+.pin-input{width:100%;padding:16px 18px;font-size:18px;letter-spacing:8px;text-align:center;border:1px solid rgba(120,160,200,.3);border-radius:14px;background:rgba(255,255,255,.6);outline:none;color:#0a2540;font-weight:600;transition:.2s}
+.pin-input:focus{border-color:#1e6fc4;background:rgba(255,255,255,.85)}
+.btn{width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#1e6fc4,#0a4d8c);color:white;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px;transition:.2s;letter-spacing:.3px}
+.btn:active{transform:scale(.98)}
+.btn-ghost{background:rgba(255,255,255,.5);color:#0a4d8c;border:1px solid rgba(120,160,200,.3)}
+.err{color:#c0392b;font-size:13px;margin-top:10px;min-height:18px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 20px}
+.header h2{font-size:22px;font-weight:700;letter-spacing:-.4px}
+.header .sub{font-size:12px;color:#5a7a9c;margin-top:2px}
+.icon-btn{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(10px)}
+.icon-btn svg{width:18px;height:18px;fill:#0a4d8c}
+.streak-card{padding:28px 24px;margin-bottom:16px;text-align:center;position:relative;overflow:hidden}
+.streak-card::after{content:"";position:absolute;top:-50%;right:-30%;width:200px;height:200px;background:radial-gradient(circle,rgba(120,180,255,.25),transparent 70%);pointer-events:none}
+.day-num{font-size:72px;font-weight:800;background:linear-gradient(135deg,#1e6fc4,#0a4d8c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1;letter-spacing:-2px}
+.day-label{font-size:13px;color:#5a7a9c;text-transform:uppercase;letter-spacing:2px;margin-top:8px;font-weight:600}
+.time-detail{display:flex;justify-content:center;gap:18px;margin-top:18px;flex-wrap:wrap}
+.time-pill{padding:8px 14px;border-radius:10px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.6);font-size:12px;color:#0a4d8c;font-weight:600}
+.time-pill b{font-size:14px;display:block;margin-top:2px;color:#0a2540}
+.progress-card{padding:20px;margin-bottom:16px}
+.progress-card h3{font-size:14px;font-weight:600;margin-bottom:14px;color:#0a2540;display:flex;justify-content:space-between;align-items:center}
+.progress-card h3 span{font-size:12px;color:#5a7a9c;font-weight:500}
+.bar{height:10px;background:rgba(200,220,240,.5);border-radius:10px;overflow:hidden;position:relative}
+.bar-fill{height:100%;background:linear-gradient(90deg,#5ba3e8,#1e6fc4,#0a4d8c);border-radius:10px;transition:width 1s cubic-bezier(.4,0,.2,1);box-shadow:0 0 12px rgba(30,111,196,.4)}
+.next-milestone{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:#5a7a9c}
+.next-milestone b{color:#0a4d8c}
+.milestones{padding:20px;margin-bottom:16px}
+.milestones h3{font-size:14px;font-weight:600;margin-bottom:14px;color:#0a2540}
+.ms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ms{aspect-ratio:1;border-radius:14px;background:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:#5a7a9c;font-weight:600;transition:.3s;position:relative}
+.ms b{font-size:16px;color:#0a4d8c;margin-bottom:2px}
+.ms.done{background:linear-gradient(135deg,rgba(30,111,196,.9),rgba(10,77,140,.95));color:rgba(255,255,255,.85);border-color:transparent;box-shadow:0 4px 12px rgba(10,77,140,.25)}
+.ms.done b{color:white}
+.ms.current{border:2px solid #1e6fc4;background:rgba(255,255,255,.7)}
+.benefits-card{padding:22px;margin-bottom:16px}
+.benefits-card h3{font-size:14px;font-weight:600;margin-bottom:12px;color:#0a2540;display:flex;align-items:center;gap:8px}
+.benefits-card h3::before{content:"";width:6px;height:6px;border-radius:50%;background:#1e6fc4;box-shadow:0 0 8px rgba(30,111,196,.5)}
+.benefits-text{font-size:14px;line-height:1.65;color:#2a4a6c;white-space:pre-wrap}
+.benefits-loading{display:inline-block;width:14px;height:14px;border:2px solid rgba(30,111,196,.2);border-top-color:#1e6fc4;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.action-btn{padding:14px;border-radius:16px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7);font-size:13px;font-weight:600;color:#0a4d8c;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;backdrop-filter:blur(10px)}
+.action-btn svg{width:20px;height:20px;fill:#1e6fc4}
+.action-btn.danger{color:#c0392b}
+.action-btn.danger svg{fill:#c0392b}
+.checkin-card{padding:20px;margin-bottom:16px}
+.checkin-card h3{font-size:14px;font-weight:600;margin-bottom:14px}
+.slider-row{margin-bottom:14px}
+.slider-row label{font-size:12px;color:#5a7a9c;display:flex;justify-content:space-between;margin-bottom:6px;font-weight:600}
+.slider-row label b{color:#0a4d8c}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;background:rgba(200,220,240,.6);border-radius:10px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#1e6fc4,#0a4d8c);cursor:pointer;box-shadow:0 2px 6px rgba(10,77,140,.3)}
+.fab{position:fixed;bottom:24px;right:calc(50% - 240px + 16px);width:58px;height:58px;border-radius:20px;background:linear-gradient(135deg,#1e6fc4,#0a4d8c);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(10,77,140,.35),inset 0 1px 0 rgba(255,255,255,.3);z-index:50;transition:.2s}
+.fab:active{transform:scale(.95)}
+.fab svg{width:24px;height:24px;fill:white}
+@media(max-width:512px){.fab{right:16px}}
+.chat-screen{position:fixed;inset:0;background:linear-gradient(135deg,#dceaf7 0%,#f5f9fd 40%,#e3eef9 100%);z-index:100;display:none;flex-direction:column}
+.chat-screen.active{display:flex}
+.chat-header{padding:16px 18px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.6);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.6)}
+.chat-header h3{flex:1;font-size:16px;font-weight:600}
+.chat-header .sub{font-size:11px;color:#5a7a9c;font-weight:400}
+.chat-body{flex:1;overflow-y:auto;padding:18px 14px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:82%;padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,#1e6fc4,#0a4d8c);color:white;border-bottom-right-radius:6px}
+.msg.ai{align-self:flex-start;background:rgba(255,255,255,.75);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);color:#0a2540;border-bottom-left-radius:6px}
+.chat-input-wrap{padding:12px 14px 18px;background:rgba(255,255,255,.5);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-end}
+.chat-input{flex:1;padding:12px 16px;border-radius:18px;border:1px solid rgba(120,160,200,.3);background:rgba(255,255,255,.8);font-size:14px;outline:none;resize:none;max-height:100px;font-family:inherit;color:#0a2540}
+.chat-input:focus{border-color:#1e6fc4}
+.send-btn{width:44px;height:44px;border-radius:14px;border:none;background:linear-gradient(135deg,#1e6fc4,#0a4d8c);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send-btn:disabled{opacity:.5}
+.send-btn svg{width:18px;height:18px;fill:white}
+.typing{display:flex;gap:4px;padding:14px 16px;align-self:flex-start;background:rgba(255,255,255,.75);border-radius:18px;border:1px solid rgba(255,255,255,.7)}
+.typing span{width:7px;height:7px;border-radius:50%;background:#1e6fc4;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+.modal-bg{position:fixed;inset:0;background:rgba(10,37,64,.4);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.active{display:flex}
+.modal{padding:26px;width:100%;max-width:360px}
+.modal h3{font-size:18px;margin-bottom:8px;font-weight:700}
+.modal p{font-size:13px;color:#5a7a9c;margin-bottom:18px;line-height:1.5}
+.input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(120,160,200,.3);background:rgba(255,255,255,.7);font-size:14px;outline:none;color:#0a2540;margin-bottom:10px;font-family:inherit}
+.input:focus{border-color:#1e6fc4}
+.modal-actions{display:flex;gap:10px;margin-top:14px}
+.modal-actions .btn{margin-top:0}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);padding:12px 20px;background:rgba(10,37,64,.9);color:white;border-radius:14px;font-size:13px;z-index:300;opacity:0;transition:.3s;pointer-events:none;backdrop-filter:blur(10px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+.refresh-btn{background:none;border:none;cursor:pointer;color:#1e6fc4;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+.refresh-btn svg{width:12px;height:12px;fill:#1e6fc4}
+.empty{text-align:center;padding:40px 20px;color:#5a7a9c;font-size:13px}
+</style>
+</head>
+<body>
+<div id="lockScreen" class="lock-screen screen active">
+<div class="lock-card glass-strong">
+<div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2L4 9v13h6v-7h4v7h6V9z"/></svg></div>
+<h1>Ascend</h1>
+<p>Personal growth tracker</p>
+<input id="pinInput" class="pin-input" type="password" inputmode="numeric" placeholder="• • • • • •" maxlength="6">
+<button id="unlockBtn" class="btn">Unlock</button>
+<div id="lockErr" class="err"></div>
+</div>
+</div>
+
+<div id="mainApp" class="screen">
+<div class="app">
+<div class="header">
+<div>
+<h2 id="greeting">Welcome back</h2>
+<div class="sub" id="todayDate"></div>
+</div>
+<div class="icon-btn" id="settingsBtn">
+<svg viewBox="0 0 24 24"><path d="M19.14 12.94a7.07 7.07 0 000-1.88l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.61-.22l-2.39.96a7.03 7.03 0 00-1.62-.94l-.36-2.54A.5.5 0 0014 2h-4a.5.5 0 00-.49.42l-.36 2.54c-.59.24-1.13.55-1.62.94l-2.39-.96a.5.5 0 00-.61.22L2.61 8.48a.5.5 0 00.12.64l2.03 1.58a7.07 7.07 0 000 1.88l-2.03 1.58a.5.5 0 00-.12.64l1.92 3.32c.14.24.42.34.67.24l2.39-.96c.49.39 1.03.7 1.62.94l.36 2.54c.05.24.25.42.49.42h4c.24 0 .44-.18.49-.42l.36-2.54c.59-.24 1.13-.55 1.62-.94l2.39.96a.5.5 0 00.61-.22l1.92-3.32a.5.5 0 00-.12-.64zM12 15.5A3.5 3.5 0 1115.5 12 3.5 3.5 0 0112 15.5z"/></svg>
+</div>
+</div>
+
+<div class="streak-card glass-strong">
+<div class="day-num" id="dayNum">0</div>
+<div class="day-label">Days Strong</div>
+<div class="time-detail" id="timeDetail"></div>
+</div>
+
+<div class="progress-card glass">
+<h3>Progress to next milestone <span id="nextMsLabel"></span></h3>
+<div class="bar"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+<div class="next-milestone"><span id="progressPct">0%</span><b id="daysLeft"></b></div>
+</div>
+
+<div class="benefits-card glass">
+<h3>Today's Insight
+<button class="refresh-btn" id="refreshInsight"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A8 8 0 1019.73 15h-2.08A6 6 0 1112 6a5.94 5.94 0 014.22 1.78L13 11h7V4z"/></svg>Refresh</button>
+</h3>
+<div class="benefits-text" id="benefitsText"><span class="benefits-loading"></span> Analyzing your progress...</div>
+</div>
+
+<div class="actions">
+<button class="action-btn" id="checkinBtn">
+<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+Daily Check-in
+</button>
+<button class="action-btn danger" id="resetBtn">
+<svg viewBox="0 0 24 24"><path d="M12 5V2L7 7l5 5V8a4 4 0 11-4 4H6a6 6 0 106-6z"/></svg>
+Reset Streak
+</button>
+</div>
+
+<div class="milestones glass">
+<h3>Milestones</h3>
+<div class="ms-grid" id="msGrid"></div>
+</div>
+
+</div>
+<button class="fab" id="fabChat" aria-label="Chat">
+<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 11H7v-2h10zm0-3H7V8h10z"/></svg>
+</button>
+</div>
+
+<div id="chatScreen" class="chat-screen">
+<div class="chat-header">
+<div class="icon-btn" id="chatBack"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"/></svg></div>
+<div>
+<h3>Ascend AI</h3>
+<div class="sub">Your personal coach</div>
+</div>
+</div>
+<div class="chat-body" id="chatBody"></div>
+<div class="chat-input-wrap">
+<textarea id="chatInput" class="chat-input" rows="1" placeholder="Ask anything..."></textarea>
+<button id="sendBtn" class="send-btn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+</div>
+</div>
+
+<div id="settingsModal" class="modal-bg">
+<div class="modal glass-strong">
+<h3>Set Start Date & Time</h3>
+<p>Choose when your current journey began.</p>
+<input type="date" id="startDate" class="input">
+<input type="time" id="startTime" class="input">
+<div class="modal-actions">
+<button class="btn btn-ghost" id="cancelSettings">Cancel</button>
+<button class="btn" id="saveSettings">Save</button>
+</div>
+</div>
+</div>
+
+<div id="checkinModal" class="modal-bg">
+<div class="modal glass-strong">
+<h3>Daily Check-in</h3>
+<p>How are you feeling today?</p>
+<div class="slider-row">
+<label>Mood <b id="moodVal">5</b></label>
+<input type="range" id="mood" min="1" max="10" value="5">
+</div>
+<div class="slider-row">
+<label>Energy <b id="energyVal">5</b></label>
+<input type="range" id="energy" min="1" max="10" value="5">
+</div>
+<div class="slider-row">
+<label>Focus <b id="focusVal">5</b></label>
+<input type="range" id="focus" min="1" max="10" value="5">
+</div>
+<textarea id="checkinNote" class="input" rows="2" placeholder="Quick note (optional)"></textarea>
+<div class="modal-actions">
+<button class="btn btn-ghost" id="cancelCheckin">Cancel</button>
+<button class="btn" id="saveCheckin">Save</button>
+</div>
+</div>
+</div>
+
+<div id="resetModal" class="modal-bg">
+<div class="modal glass-strong">
+<h3>Reset Streak?</h3>
+<p>This will log today as a reset and start your counter over. You can do this anytime.</p>
+<textarea id="resetNote" class="input" rows="2" placeholder="What happened? (optional)"></textarea>
+<div class="modal-actions">
+<button class="btn btn-ghost" id="cancelReset">Keep Going</button>
+<button class="btn" id="confirmReset">Reset</button>
+</div>
+</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SUPABASE_URL="YOUR_SUPABASE_URL";
+const SUPABASE_KEY="YOUR_SUPABASE_ANON_KEY";
+const GEMINI_KEY="AIzaSyB7aqDyifaMtIs3KgWvNz53kkecD8CdKgw";
+const PIN="906906";
+const USER_KEY="primary";
+const MILESTONES=[1,3,7,14,21,30,60,90,120,180,270,365,500,730,1000,1500];
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let state={start:null,days:0,streakRow:null};
+
+const $=id=>document.getElementById(id);
+const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)};
+const fmt=d=>d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+
+$("unlockBtn").onclick=tryUnlock;
+$("pinInput").addEventListener("keypress",e=>{if(e.key==="Enter")tryUnlock()});
+function tryUnlock(){
+  if($("pinInput").value===PIN){
+    $("lockScreen").classList.remove("active");
+    $("mainApp").classList.add("active");
+    init();
+  } else {
+    $("lockErr").textContent="Incorrect code";
+    $("pinInput").value="";
+  }
+}
+
+async function init(){
+  $("todayDate").textContent=fmt(new Date());
+  const h=new Date().getHours();
+  $("greeting").textContent=h<12?"Good morning":h<18?"Good afternoon":"Good evening";
+  await loadStreak();
+  renderAll();
+  loadInsight();
+  setInterval(()=>{computeDays();renderTime()},60000);
+}
+
+async function loadStreak(){
+  const {data}=await sb.from("streak_data").select("*").eq("user_key",USER_KEY).maybeSingle();
+  if(data){
+    state.streakRow=data;
+    state.start=new Date(data.start_datetime);
+  } else {
+    const now=new Date();
+    const {data:ins}=await sb.from("streak_data").insert({user_key:USER_KEY,start_datetime:now.toISOString()}).select().single();
+    state.streakRow=ins;
+    state.start=now;
+  }
+  computeDays();
+}
+
+function computeDays(){
+  if(!state.start)return;
+  const diff=Date.now()-state.start.getTime();
+  state.days=Math.max(0,Math.floor(diff/86400000));
+}
+
+function renderAll(){
+  renderTime();
+  renderMilestones();
+  renderProgress();
+}
+
+function renderTime(){
+  $("dayNum").textContent=state.days;
+  if(!state.start)return;
+  const diff=Date.now()-state.start.getTime();
+  const h=Math.floor(diff/3600000)%24;
+  const m=Math.floor(diff/60000)%60;
+  $("timeDetail").innerHTML=`<div class="time-pill">Hours<b>${h}</b></div><div class="time-pill">Minutes<b>${m}</b></div><div class="time-pill">Started<b>${state.start.toLocaleDateString()}</b></div>`;
+}
+
+function renderMilestones(){
+  const g=$("msGrid");
+  g.innerHTML="";
+  MILESTONES.forEach(m=>{
+    const div=document.createElement("div");
+    const done=state.days>=m;
+    const current=!done && MILESTONES.find(x=>x>state.days)===m;
+    div.className="ms"+(done?" done":"")+(current?" current":"");
+    div.innerHTML=`<b>${m}</b>day${m>1?"s":""}`;
+    g.appendChild(div);
+  });
+}
+
+function renderProgress(){
+  const next=MILESTONES.find(m=>m>state.days)||MILESTONES[MILESTONES.length-1];
+  const prev=[...MILESTONES].reverse().find(m=>m<=state.days)||0;
+  const range=next-prev;
+  const pct=range>0?Math.min(100,Math.round(((state.days-prev)/range)*100)):100;
+  $("barFill").style.width=pct+"%";
+  $("progressPct").textContent=pct+"% complete";
+  $("daysLeft").textContent=(next-state.days)+" days to "+next;
+  $("nextMsLabel").textContent="→ "+next+" days";
+}
+
+async function loadInsight(){
+  $("benefitsText").innerHTML='<span class="benefits-loading"></span> Analyzing your progress...';
+  const prompt=`You are a holistic wellness coach for a personal growth tracker called Ascend. The user is on day ${state.days} of a self-discipline and abstinence journey focused on building mental clarity, energy, and self-mastery. Write a warm, motivating, evidence-based insight (max 140 words) describing the specific physiological and psychological benefits they are likely experiencing right now on day ${state.days}. Mention dopamine regulation, energy levels, mental clarity, confidence, or mood changes as appropriate to their current day. Address them directly. Do not mention the word "nofap" — frame it as self-mastery and discipline. Keep it concrete and personal.`;
+  try{
+    const r=await callGemini(prompt);
+    $("benefitsText").textContent=r;
+  }catch(e){
+    $("benefitsText").textContent="Could not load insight right now. Tap refresh to try again.";
+  }
+}
+
+async function callGemini(prompt,history){
+  const contents=[];
+  if(history)history.forEach(m=>contents.push({role:m.role==="user"?"user":"model",parts:[{text:m.content}]}));
+  contents.push({role:"user",parts:[{text:prompt}]});
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({contents,generationConfig:{temperature:0.8,maxOutputTokens:600}})
+  });
+  const j=await res.json();
+  return j.candidates?.[0]?.content?.parts?.[0]?.text?.trim()||"No response.";
+}
+
+$("refreshInsight").onclick=loadInsight;
+
+$("settingsBtn").onclick=()=>{
+  if(state.start){
+    const d=state.start;
+    $("startDate").value=d.toISOString().slice(0,10);
+    $("startTime").value=d.toTimeString().slice(0,5);
+  }
+  $("settingsModal").classList.add("active");
+};
+$("cancelSettings").onclick=()=>$("settingsModal").classList.remove("active");
+$("saveSettings").onclick=async()=>{
+  const d=$("startDate").value,t=$("startTime").value;
+  if(!d||!t){toast("Pick a date and time");return}
+  const dt=new Date(d+"T"+t);
+  await sb.from("streak_data").update({start_datetime:dt.toISOString(),updated_at:new Date().toISOString()}).eq("user_key",USER_KEY);
+  state.start=dt;
+  computeDays();
+  renderAll();
+  loadInsight();
+  $("settingsModal").classList.remove("active");
+  toast("Start time updated");
+};
+
+$("checkinBtn").onclick=()=>$("checkinModal").classList.add("active");
+$("cancelCheckin").onclick=()=>$("checkinModal").classList.remove("active");
+["mood","energy","focus"].forEach(k=>{
+  $(k).oninput=e=>$(k+"Val").textContent=e.target.value;
+});
+$("saveCheckin").onclick=async()=>{
+  const today=new Date().toISOString().slice(0,10);
+  const payload={user_key:USER_KEY,check_date:today,mood:+$("mood").value,energy:+$("energy").value,focus:+$("focus").value,note:$("checkinNote").value||null};
+  const {error}=await sb.from("daily_checkins").upsert(payload,{onConflict:"user_key,check_date"});
+  if(error){toast("Could not save")}else{toast("Check-in saved");$("checkinNote").value=""}
+  $("checkinModal").classList.remove("active");
+};
+
+$("resetBtn").onclick=()=>$("resetModal").classList.add("active");
+$("cancelReset").onclick=()=>$("resetModal").classList.remove("active");
+$("confirmReset").onclick=async()=>{
+  await sb.from("resets").insert({user_key:USER_KEY,previous_streak_days:state.days,note:$("resetNote").value||null});
+  const now=new Date();
+  await sb.from("streak_data").update({start_datetime:now.toISOString(),updated_at:now.toISOString()}).eq("user_key",USER_KEY);
+  state.start=now;
+  $("resetNote").value="";
+  computeDays();
+  renderAll();
+  loadInsight();
+  $("resetModal").classList.remove("active");
+  toast("Fresh start. You've got this.");
+};
+
+$("fabChat").onclick=async()=>{
+  $("chatScreen").classList.add("active");
+  await loadChatHistory();
+  $("chatInput").focus();
+};
+$("chatBack").onclick=()=>$("chatScreen").classList.remove("active");
+
+async function loadChatHistory(){
+  const body=$("chatBody");
+  body.innerHTML="";
+  const {data}=await sb.from("chat_messages").select("*").eq("user_key",USER_KEY).order("created_at",{ascending:true}).limit(50);
+  if(!data||data.length===0){
+    body.innerHTML=`<div class="msg ai">Hey. I'm your personal coach. You're on day ${state.days} of your journey. Ask me anything — how you're changing, what to expect, how to handle urges, or just talk.</div>`;
+    return;
+  }
+  data.forEach(m=>addMsg(m.role,m.content,false));
+  body.scrollTop=body.scrollHeight;
+}
+
+function addMsg(role,content,save){
+  const body=$("chatBody");
+  const d=document.createElement("div");
+  d.className="msg "+(role==="user"?"user":"ai");
+  d.textContent=content;
+  body.appendChild(d);
+  body.scrollTop=body.scrollHeight;
+  if(save)sb.from("chat_messages").insert({user_key:USER_KEY,role,content,day_number:state.days}).then(()=>{});
+}
+
+$("chatInput").addEventListener("input",e=>{e.target.style.height="auto";e.target.style.height=Math.min(100,e.target.scrollHeight)+"px"});
+$("chatInput").addEventListener("keypress",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg()}});
+$("sendBtn").onclick=sendMsg;
+
+async function sendMsg(){
+  const txt=$("chatInput").value.trim();
+  if(!txt)return;
+  $("chatInput").value="";
+  $("chatInput").style.height="auto";
+  addMsg("user",txt,true);
+  const typing=document.createElement("div");
+  typing.className="typing";
+  typing.innerHTML="<span></span><span></span><span></span>";
+  $("chatBody").appendChild(typing);
+  $("chatBody").scrollTop=$("chatBody").scrollHeight;
+  const {data:hist}=await sb.from("chat_messages").select("role,content").eq("user_key",USER_KEY).order("created_at",{ascending:false}).limit(10);
+  const history=(hist||[]).reverse().slice(0,-1);
+  const sys=`You are an empathetic, knowledgeable personal coach inside the Ascend app. The user is on day ${state.days} of a self-mastery and abstinence journey (avoid the word "nofap"; frame it as discipline and self-mastery). Speak directly, warmly, and with substance. Use evidence-based reasoning about dopamine, neuroplasticity, habit formation, energy, focus, and confidence. Keep replies under 180 words unless deeply asked. Be specific to day ${state.days}. User says: ${txt}`;
+  try{
+    const reply=await callGemini(sys,history);
+    typing.remove();
+    addMsg("ai",reply,true);
+  }catch(e){
+    typing.remove();
+    addMsg("ai","I couldn't reach the network. Try again.",false);
+  }
+}
+</script>
+</body>
+</html>
